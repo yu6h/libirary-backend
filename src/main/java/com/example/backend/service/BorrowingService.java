@@ -24,6 +24,7 @@ public class BorrowingService {
     private final BorrowingRecordRepository borrowingRecordRepository;
     private final InventoryRepository inventoryRepository;
 
+    // 查詢未還書的借閱紀錄
     @Transactional(readOnly = true)
     public PageResponse<BorrowingItemResponse> activeBorrowings(Long userId, Pageable pageable) {
         Page<BorrowingItemResponse> page = borrowingRecordRepository.findActiveBorrowingsByUserId(userId, pageable)
