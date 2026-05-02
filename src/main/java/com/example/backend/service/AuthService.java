@@ -39,6 +39,7 @@ public class AuthService {
         Account account = new Account();
         account.setPhoneNumber(request.phoneNumber());
         account.setUserName(request.userName());
+        // 使用BCryptPasswordEncoder (PasswordEncoder) 加鹽和雜湊來加密密碼
         account.setPassword(passwordEncoder.encode(request.password()));
         account.setRegistrationTime(OffsetDateTime.now());
         accountRepository.save(account);
