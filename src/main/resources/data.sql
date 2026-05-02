@@ -13,7 +13,7 @@ INSERT INTO book (isbn, name, author, introduction) VALUES
 ('9789861755446', '窮查理的普通常識', 'Charles T. Munger', '跨領域思維模型與決策智慧。'),
 ('9789863203389', '快思慢想', 'Daniel Kahneman', '系統一與系統二的思考框架。'),
 ('9789864084541', '失控', 'Kevin Kelly', '科技、系統與未來趨勢。'),
-('9789869474330', '原則', 'Ray Dalio', '建立工作與人生決策原則。');
+('9789869474330', '原則', 'Ray Dalio', '建立工作與人生決策原則。')^
 
 INSERT INTO inventory (isbn, status) VALUES
 ('9789573337891', 'AVAILABLE'),
@@ -60,4 +60,4 @@ INSERT INTO inventory (isbn, status) VALUES
 ('9789864084541', 'AVAILABLE'),
 ('9789869474330', 'AVAILABLE'),
 ('9789869474330', 'AVAILABLE'),
-('9789869474330', 'AVAILABLE');
+('9789869474330', 'AVAILABLE')^

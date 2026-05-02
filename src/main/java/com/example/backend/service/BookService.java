@@ -1,14 +1,8 @@
 package com.example.backend.service;
 
-import com.example.backend.domain.Account;
-import com.example.backend.domain.BorrowingRecord;
-import com.example.backend.domain.Inventory;
-import com.example.backend.domain.InventoryStatus;
 import com.example.backend.dto.book.BookListItemResponse;
 import com.example.backend.dto.common.PageResponse;
 import com.example.backend.exception.ApiException;
-import com.example.backend.repository.BorrowingRecordRepository;
-import com.example.backend.repository.InventoryRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 
 @Service
@@ -26,8 +19,6 @@ import java.util.List;
 public class BookService {
 
     private final EntityManager entityManager;
-    private final InventoryRepository inventoryRepository;
-    private final BorrowingRecordRepository borrowingRecordRepository;
 
     @Transactional(readOnly = true)
     public PageResponse<BookListItemResponse> listBooks(int page, int size) {
@@ -53,31 +44,27 @@ public class BookService {
         return PageResponse.from(paged);
     }
 
+    /**
+     * 借閱改由 PostgreSQL function {@code sp_borrow_book} 執行（見 {@code schema.sql}）。
+     * 維護邏輯分散在 DB 與應用層；。
+     */
     @Transactional
     public void borrow(String isbn, Long userId) {
-        boolean alreadyBorrowed = borrowingRecordRepository
-                .existsByAccountUserIdAndInventoryBookIsbnAndReturnTimeIsNull(userId, isbn);
-        if (alreadyBorrowed) {
-            throw new ApiException(HttpStatus.CONFLICT, "已擁有該書籍，借閱失敗");
+        Object row = entityManager.createNativeQuery(
+                        "SELECT result_status, borrowing_id FROM sp_borrow_book(?1, ?2)"
+                )
+                .setParameter(1, userId)
+                .setParameter(2, isbn)
+                .getSingleResult();
+
+        Object[] cols = (Object[]) row;
+        String status = String.valueOf(cols[0]);
+
+        switch (status) {
+            case "OK" -> { /* borrowing_id in cols[1]; no return value required */ }
+            case "DUPLICATE" -> throw new ApiException(HttpStatus.CONFLICT, "已擁有該書籍，借閱失敗");
+            case "NO_STOCK" -> throw new ApiException(HttpStatus.CONFLICT, "借閱失敗");
+            default -> throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "借閱處理失敗");
         }
-
-        List<Inventory> available = inventoryRepository.findByIsbnAndStatusForUpdate(
-                isbn,
-                InventoryStatus.AVAILABLE,
-                PageRequest.of(0, 1)
-        );
-        if (available.isEmpty()) {
-            throw new ApiException(HttpStatus.CONFLICT, "借閱失敗");
-        }
-
-        Inventory inventory = available.getFirst();
-        inventory.setStatus(InventoryStatus.BORROWED);
-
-        Account accountRef = entityManager.getReference(Account.class, userId);
-        BorrowingRecord record = new BorrowingRecord();
-        record.setAccount(accountRef);
-        record.setInventory(inventory);
-        record.setBorrowingTime(OffsetDateTime.now());
-        borrowingRecordRepository.save(record);
     }
 }
