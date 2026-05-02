@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
 import com.example.backend.domain.Account;
+import com.example.backend.domain.BorrowingRecord;
 import com.example.backend.domain.Inventory;
 import com.example.backend.domain.InventoryStatus;
 import com.example.backend.dto.book.BookListItemResponse;
